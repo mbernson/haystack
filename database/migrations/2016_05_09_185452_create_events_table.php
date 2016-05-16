@@ -26,19 +26,6 @@ class CreateEventsTable extends Migration
                 ->references(['id', 'application_id'])->on('incidents');
             $table->index('application_id');
         });
-        /*
-        Schema::create('exceptions', function (Blueprint $table) {
-            $table->integer('id');
-            $table->integer('application_id');
-            $table->string('title');
-            $table->string('code');
-            $table->string('file');
-            $table->integer('line');
-            
-            $table->primary(['application_id', 'id']);
-        });
-
-        */
     }
 
     /**

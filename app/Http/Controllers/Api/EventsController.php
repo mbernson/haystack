@@ -17,7 +17,7 @@ class EventsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($app_id)
+    public function index($app_id, Request $request)
     {
         $events = Event::where('application_id', $app_id)
             ->orderBy('created_at', 'desc')
@@ -52,11 +52,8 @@ class EventsController extends Controller
         $event->fill($request->all());
         $event->created_at = new \DateTime();
 
-        if($request->has('stack_trace')) {
-            $event->saveStackTrace($request->get('stack_trace'));
-        }
 
-        if($event->createIncidentIfNeeded() && $event->save()) {
+        if($event->createIncidentIfNeeded() && $event->save() && $event->saveStackTraceIfNeeded($request)) {
             return response()->json($event);
         } else {
             abort(500);
@@ -71,8 +68,11 @@ class EventsController extends Controller
      */
     public function show($app_id, $id)
     {
+        /** @var Event $event */
         $event = Event::where('id', $id)->where('application_id', $app_id)->firstOrFail();
-        return response()->json($event);
+        $output = $event->toArray();
+        $output['stack_trace'] = $event->getStackTrace();
+        return response()->json($output);
     }
 
     /**

@@ -15,9 +15,10 @@ class IncidentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($app_id)
+    public function index($app_id, Request $request)
     {
         $incidents = Incident::where('application_id', $app_id)
+            ->where('status', $request->get('status', 'open'))
             ->orderBy('created_at', 'desc')
             ->limit(100)
             ->get();

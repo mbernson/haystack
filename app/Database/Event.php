@@ -4,6 +4,8 @@ namespace App\Database;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use League\Flysystem\Filesystem;
+use League\Flysystem\FilesystemInterface;
 
 class Event extends Model
 {
@@ -34,19 +36,30 @@ class Event extends Model
     }
 
     public function getStackTracePath($extension = '.txt') {
-        return storage_path(join(PATH_SEPARATOR, [
+        return join('/', [
             'exceptions',
             $this->application_id,
             $this->id,
-        ])).$extension;
+        ]).$extension;
     }
 
     public function saveStackTrace($stackTrace) {
-        file_put_contents($this->getStackTracePath(), $stackTrace);
+        /** @var FilesystemInterface $filesystem */
+        $filesystem = app(FilesystemInterface::class);
+        return $filesystem->put($this->getStackTracePath(), $stackTrace);
+    }
+
+    public function saveStackTraceIfNeeded(Request $request) {
+        if($request->has('stack_trace')) {
+            return $this->saveStackTrace($request->get('stack_trace'));
+        }
+        return true;
     }
 
     public function getStackTrace() {
-        return file_get_contents($this->getStackTracePath());
+        /** @var FilesystemInterface $filesystem */
+        $filesystem = app(FilesystemInterface::class);
+        return $filesystem->read($this->getStackTracePath());
     }
 
     public function incident() {
@@ -76,4 +89,5 @@ class Event extends Model
         $this->incident_id = $incident->getKey();
         return true;
     }
+
 }

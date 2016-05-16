@@ -25,6 +25,7 @@ class CreateIncidentsTable extends Migration
             // 5       Notice: normal but significant condition
             // 6       Informational: informational messages
             // 7       Debug: debug-level messages
+            /*
             $table->enum('level', [
                 'emergency',
                 'alert',
@@ -35,6 +36,7 @@ class CreateIncidentsTable extends Migration
                 'info',
                 'debug'
             ]);
+            */
             
             $table->enum('status', [
                 'open',
@@ -56,6 +58,6 @@ class CreateIncidentsTable extends Migration
      */
     public function down()
     {
-        Schema::drop('incident');
+        Schema::drop('incidents');
     }
 }
