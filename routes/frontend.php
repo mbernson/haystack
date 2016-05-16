@@ -14,3 +14,12 @@
 $app->get('/', function () use ($app) {
     return $app->version();
 });
+
+$app->get('/crash', function () use ($app) {
+    try {
+//        $a = 0 / 0;
+        throw new \Exception('Oh no!', 1337);
+    } catch(\Exception $e) {
+        var_dump($e);
+    }
+});

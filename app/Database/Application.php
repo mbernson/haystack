@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Database;
 
 use Illuminate\Auth\Authenticatable;
 use Laravel\Lumen\Auth\Authorizable;
@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 
-class User extends Model implements
+class Application extends Model implements
     AuthenticatableContract,
     AuthorizableContract
 {
@@ -29,6 +29,5 @@ class User extends Model implements
      * @var array
      */
     protected $hidden = [
-        'password',
     ];
 }
