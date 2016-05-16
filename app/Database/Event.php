@@ -74,17 +74,15 @@ class Event extends Model
         if(is_null($this->application_id)) {
             return false;
         }
-        $incident = Incident::where('title', $this->title)
-            ->where('status', '!=', 'closed')
-            ->first();
+        $incident = Incident::where('title', $this->title)->first();
         if($incident) {
             $incident->occurences += 1;
         } else {
             $incident = new Incident();
             $incident->title = $this->title;
             $incident->application_id = $this->application_id;
-            $incident->status = 'open';
         }
+        $incident->status = 'open';
         $incident->save();
         $this->incident_id = $incident->getKey();
         return true;

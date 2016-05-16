@@ -19,11 +19,24 @@ class EventsController extends Controller
      */
     public function index($app_id, Request $request)
     {
-        $events = Event::where('application_id', $app_id)
-            ->orderBy('created_at', 'desc')
-            ->limit(100)
-            ->get();
-        return response()->json($events);
+        $query = Event::query();
+        $query->select(
+            'events.id',
+            'events.application_id',
+            'events.incident_id',
+            'events.title',
+            'events.type',
+            'incidents.status',
+            'incidents.occurences',
+            'events.created_at'
+        )
+            ->where('events.application_id', $app_id)
+            ->where('status', $request->get('status', 'open'))
+            ->join('incidents', 'events.incident_id', '=', 'incidents.id')
+            ->orderBy('events.created_at', 'desc')
+            ->limit(100);
+
+        return response()->json($query->get());
     }
 
     /**

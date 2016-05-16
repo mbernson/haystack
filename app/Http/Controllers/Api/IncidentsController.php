@@ -17,12 +17,18 @@ class IncidentsController extends Controller
      */
     public function index($app_id, Request $request)
     {
-        $incidents = Incident::where('application_id', $app_id)
-            ->where('status', $request->get('status', 'open'))
+        $query = Incident::query();
+        $query->where('application_id', $app_id)
+            ->where('status', $request->get('status', 'open'));
+        
+        if($request->has('type')) {
+            $query->where('type', $request->get('type'));
+        }
+        
+        $query->orderBy('occurences', 'desc')
             ->orderBy('created_at', 'desc')
-            ->limit(100)
-            ->get();
-        return response()->json($incidents);
+            ->limit(100);
+        return response()->json($query->get());
     }
 
     /**

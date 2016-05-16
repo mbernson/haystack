@@ -11,8 +11,14 @@
 |
 */
 
-$app->get('/', function () use ($app) {
-    return $app->version();
+
+$app->group(['middleware' => 'auth'], function () use ($app) {
+    $app->get('/', function () use ($app) {
+        return $app->version();
+    });
+    $app->get('/authed', function() {
+        return 'You are authenticated!';
+    });
 });
 
 $app->get('/crash', function () use ($app) {
