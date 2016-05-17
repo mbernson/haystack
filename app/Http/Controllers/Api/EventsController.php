@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Database\Application;
 use App\Database\Event;
 
+use App\Jobs\StoreEventJob;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class EventsController extends Controller
 {
@@ -15,7 +18,9 @@ class EventsController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @param $app_id
+     * @param Request $request
+     * @return Response
      */
     public function index($app_id, Request $request)
     {
@@ -36,7 +41,7 @@ class EventsController extends Controller
             ->orderBy('events.created_at', 'desc')
             ->limit(100);
 
-        return response()->json($query->get());
+        return new JsonResponse($query->get());
     }
 
     /**
@@ -52,8 +57,9 @@ class EventsController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param $app_id
+     * @param  \Illuminate\Http\Request $request
+     * @return Response
      */
     public function store($app_id, Request $request)
     {
@@ -67,17 +73,41 @@ class EventsController extends Controller
 
 
         if($event->createIncidentIfNeeded() && $event->save() && $event->saveStackTraceIfNeeded($request)) {
-            return response()->json($event);
+            return new JsonResponse($event, 201);
         } else {
-            abort(500);
+            abort(500, 'Event could not be saved');
         }
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param $app_id
+     * @param  \Illuminate\Http\Request $request
+     * @return Response
+     */
+    public function storeAsync($app_id, Request $request)
+    {
+        /** @var Application $app */
+        $app = Application::findOrFail($app_id);
+        $event = new Event();
+
+        $event->application_id = $app->getKey();
+        $event->fill($request->all());
+        $event->created_at = new \DateTime();
+
+        $job = new StoreEventJob($event);
+        $this->dispatch($job);
+
+        return new JsonResponse(['saved' => true], 201);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param $app_id
+     * @param  int $id
+     * @return Response
      */
     public function show($app_id, $id)
     {
@@ -85,18 +115,7 @@ class EventsController extends Controller
         $event = Event::where('id', $id)->where('application_id', $app_id)->firstOrFail();
         $output = $event->toArray();
         $output['stack_trace'] = $event->getStackTrace();
-        return response()->json($output);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
+        return new JsonResponse($output);
     }
 
     /**
@@ -106,19 +125,34 @@ class EventsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $app_id, $id)
     {
-        //
+        /** @var Event $event */
+        $event = Event::where('id', $id)->where('application_id', $app_id)->firstOrFail();
+        $event->fill($request->all());
+        if($event->save() && $event->saveStackTraceIfNeeded($request)) {
+            return new JsonResponse($event, 202);
+        } else {
+            abort(500, 'Event could not be saved');
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param $app_id
+     * @param  int $id
+     * @return Response
+     * @throws \Exception
      */
-    public function destroy($id)
+    public function destroy($app_id, $id)
     {
-        //
+        /** @var Event $event */
+        $event = Event::where('id', $id)->where('application_id', $app_id)->firstOrFail();
+        if($event->delete()) {
+            return new JsonResponse($event, 202);
+        } else {
+            return abort(500, 'Event could not be deleted');
+        }
     }
 }

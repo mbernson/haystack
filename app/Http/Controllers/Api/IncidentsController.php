@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Database\Incident;
+use App\Mixins\WithLoggedInUser;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class IncidentsController extends Controller
 {
-    public function __construct() {
-    }
+    use WithLoggedInUser;
 
     /**
      * Display a listing of the resource.
      *
+     * @param $app_id
+     * @param Request $request
      * @return \Illuminate\Http\Response
      */
     public function index($app_id, Request $request)
@@ -45,25 +48,35 @@ class IncidentsController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param $app_id
+     * @param  int $id
      * @return \Illuminate\Http\Response
      */
     public function show($app_id, $id)
     {
+        /** @var Incident $incident */
         $incident = Incident::where('id', $id)->where('application_id', $app_id)->firstOrFail();
-        return response()->json($incident);
+        return new JsonResponse($incident);
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  \Illuminate\Http\Request $request
+     * @param $app_id
+     * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $app_id, $id)
     {
-        //
+        /** @var Incident $incident */
+        $incident = Incident::where('id', $id)->where('application_id', $app_id)->firstOrFail();
+        $incident->fill($request->only('status'));
+        if($incident->save()) {
+            return new JsonResponse($incident, 202);
+        } else {
+            return abort(500, "Incident could not be saved");
+        }
     }
 
     /**

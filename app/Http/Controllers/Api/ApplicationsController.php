@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Database\User;
+use App\Mixins\WithLoggedInUser;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use App\Database\Application;
+use Ramsey\Uuid\Uuid;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ApplicationsController extends Controller
 {
-    public function __construct() {
-    }
+    use WithLoggedInUser;
 
     /**
      * Display a listing of the resource.
@@ -29,7 +33,16 @@ class ApplicationsController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $app = new Application();
+        $app->fill($request->all());
+        $app->user_id = $this->user->getKey();
+        $app->api_token = Uuid::uuid4();
+        
+        if($app->save()) {
+            return new JsonResponse($app, 202);
+        } else {
+            abort(500, 'App could not be saved');
+        }
     }
 
     /**
@@ -41,7 +54,7 @@ class ApplicationsController extends Controller
     public function show($id)
     {
         $app = Application::findOrFail($id);
-        return response()->json($app);
+        return new JsonResponse($app);
     }
 
     /**
